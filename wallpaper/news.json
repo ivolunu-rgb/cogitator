@@ -1,0 +1,14 @@
+{
+  "refreshMinutes": 30,
+  "maxAgeHours": 48,
+  "feeds": [
+    { "tag": "AI", "source": "", "url": "https://news.google.com/rss/search?q=OpenAI+OR+Anthropic+OR+%22artificial+intelligence%22+when:1d&hl=en-US&gl=US&ceid=US:en" },
+    { "tag": "AI", "source": "Habr", "url": "https://habr.com/ru/rss/hubs/artificial_intelligence/articles/?fl=ru" },
+    { "tag": "TECH", "source": "Ars Technica", "url": "https://feeds.arstechnica.com/arstechnica/index" },
+    { "tag": "TECH", "source": "3DNews", "url": "https://3dnews.ru/news/rss/" },
+    { "tag": "GAMES", "source": "PC Gamer", "url": "https://www.pcgamer.com/rss/" },
+    { "tag": "GAMES", "source": "StopGame", "url": "https://rss.stopgame.ru/rss_news.xml" },
+    { "tag": "WH40K", "source": "", "maxAgeHours": 168, "url": "https://news.google.com/rss/search?q=%22Warhammer+40%2C000%22+OR+%22Warhammer+40K%22+when:7d&hl=en-US&gl=US&ceid=US:en" },
+    { "tag": "WH40K", "source": "", "maxAgeHours": 168, "url": "https://news.google.com/rss/search?q=Warhammer+when:7d&hl=ru&gl=RU&ceid=RU:ru" }
+  ]
+}

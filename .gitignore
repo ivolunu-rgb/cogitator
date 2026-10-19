@@ -22,3 +22,9 @@ desktop.ini
 
 .env
 .env.local
+# wallpaper: personal files stay local
+wallpaper/art/*
+!wallpaper/art/.gitkeep
+wallpaper/wallpaper.log
+wallpaper/news-seen.json
+wallpaper/sentinel-inbox/

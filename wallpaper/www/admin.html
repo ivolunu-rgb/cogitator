@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cogitator :: Administratum</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+    <style>
+        :root {
+            --bg: #030b06;
+            --panel: rgba(125, 255, 155, 0.035);
+            --head: rgba(125, 255, 155, 0.13);
+            --line: rgba(125, 255, 155, 0.4);
+            --dim: rgba(125, 255, 155, 0.55);
+            --text: #b8ffcc;
+            --bright: #eafff0;
+            --red: #ff5a44;
+            --amber: #ffc861;
+            --cyan: #8fe3ff;
+            --mono: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 15px/1.45 var(--mono);
+            padding: 24px 16px 60px;
+        }
+
+        /* faint scanlines, like the wallpaper */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+        }
+
+        main { max-width: 1100px; margin: 0 auto; }
+
+        h1, h2, .vt { font-family: VT323, var(--mono); font-weight: normal; letter-spacing: 0.04em; }
+
+        h1 { font-size: 40px; margin: 0 0 4px; color: var(--bright); text-shadow: 0 0 10px rgba(125, 255, 155, 0.5); }
+
+        .sub { color: var(--dim); margin-bottom: 28px; }
+
+        section {
+            position: relative;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            margin-bottom: 28px;
+        }
+
+        /* heavy corner brackets */
+        section::before, section::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 3px solid var(--text);
+        }
+        section::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+        section::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+
+        h2 {
+            margin: 0;
+            padding: 6px 14px;
+            font-size: 26px;
+            background: var(--head);
+            color: var(--bright);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        h2 small { font-size: 20px; color: var(--dim); }
+
+        .body { padding: 16px; }
+
+        .hint { color: var(--dim); margin: 0 0 12px; }
+
+        button, input, select {
+            font: inherit;
+            color: var(--text);
+            background: rgba(125, 255, 155, 0.06);
+            border: 1px solid var(--line);
+            padding: 7px 10px;
+        }
+
+        input:focus, select:focus { outline: none; border-color: var(--text); box-shadow: 0 0 6px rgba(125, 255, 155, 0.35); }
+
+        button { cursor: pointer; font-family: VT323, var(--mono); font-size: 20px; padding: 4px 16px; }
+        button:hover { background: rgba(125, 255, 155, 0.18); color: var(--bright); }
+        button.danger { color: var(--red); border-color: rgba(255, 90, 68, 0.6); }
+        button.danger:hover { background: rgba(255, 90, 68, 0.15); }
+        button:disabled { opacity: 0.4; cursor: default; }
+
+        /* ---- art ---- */
+        .drop {
+            border: 2px dashed var(--line);
+            padding: 22px;
+            text-align: center;
+            color: var(--dim);
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        .drop.over { border-color: var(--text); color: var(--bright); background: rgba(125, 255, 155, 0.08); }
+        .drop .vt { font-size: 24px; color: var(--text); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+
+        .card { border: 1px solid rgba(125, 255, 155, 0.25); background: rgba(0, 0, 0, 0.3); }
+        .card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; filter: saturate(0.85); }
+        .card .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; }
+        .card .name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .card button { font-size: 16px; padding: 0 8px; }
+
+        /* ---- news ---- */
+        .settings { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: end; margin-bottom: 18px; }
+        .settings label { display: flex; flex-direction: column; gap: 4px; color: var(--dim); font-size: 13px; }
+        .settings input { width: 110px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+        th { text-align: left; font-weight: normal; color: var(--dim); font-size: 13px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+        td { padding: 8px; border-bottom: 1px solid rgba(125, 255, 155, 0.12); vertical-align: top; }
+        td.tag { font-family: VT323, var(--mono); font-size: 22px; color: var(--cyan); white-space: nowrap; }
+        td .what { word-break: break-all; }
+        td .url { color: var(--dim); font-size: 12px; word-break: break-all; }
+        td.count { white-space: nowrap; }
+        .bad { color: var(--red); }
+        .ok { color: var(--text); }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+        .tabs button.on { background: rgba(125, 255, 155, 0.2); color: var(--bright); }
+
+        .form { display: grid; grid-template-columns: 1fr 140px 120px; gap: 10px; }
+        .form .wide { grid-column: 1 / -1; }
+        .form label { display: flex; flex-direction: column; gap: 4px; color: var(--dim); font-size: 13px; }
+        .actions { display: flex; gap: 10px; margin-top: 12px; }
+
+        .sample { margin-top: 12px; border-left: 2px solid var(--cyan); padding: 4px 12px; color: var(--cyan); }
+        .sample div { margin: 3px 0; }
+        .sample .when { color: var(--dim); font-size: 12px; margin-right: 6px; }
+
+        #toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            max-width: min(480px, calc(100% - 32px));
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            background: #06140b;
+            color: var(--bright);
+            font-family: VT323, var(--mono);
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #toast.show { opacity: 1; }
+        #toast.err { border-color: var(--red); color: var(--red); }
+
+        @media (max-width: 640px) {
+            .form { grid-template-columns: 1fr; }
+            th:nth-child(3), td:nth-child(3) { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>⚙ COGITATOR :: ADMINISTRATUM</h1>
+        <div class="sub">Управление обоями. Изменения применяются сами, перезапускать ничего не нужно.</div>
+
+        <section>
+            <h2>PICT-ARCHIVE <small id="art-count"></small></h2>
+            <div class="body">
+                <p class="hint">Арты для карусели справа. Новые покажутся на обоях в течение минуты, первыми в очереди.</p>
+                <label class="drop" id="drop">
+                    <div class="vt">+ ПЕРЕТАЩИ КАРТИНКИ СЮДА ИЛИ НАЖМИ</div>
+                    <div>JPG, PNG, WebP или GIF, до 25 МБ</div>
+                    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.gif" multiple hidden>
+                </label>
+                <div class="grid" id="art"></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>ASTROPATHIC RELAY <small id="feed-count"></small></h2>
+            <div class="body">
+                <div class="settings">
+                    <label>Новость на обоях раз в, сек
+                        <input type="number" id="showEvery" min="20" max="3600"></label>
+                    <label>Перечитывать ленты раз в, мин
+                        <input type="number" id="refresh" min="5" max="720"></label>
+                    <label>Брать новости не старше, ч
+                        <input type="number" id="maxAge" min="1" max="720"></label>
+                    <button id="save-settings">СОХРАНИТЬ</button>
+                </div>
+
+                <table>
+                    <thead><tr><th>Тег</th><th>Что читаем</th><th>Свежих</th><th></th></tr></thead>
+                    <tbody id="feeds"></tbody>
+                </table>
+
+                <div class="tabs">
+                    <button class="on" data-mode="keywords">ПО КЛЮЧЕВЫМ СЛОВАМ</button>
+                    <button data-mode="rss">RSS-ЛЕНТА</button>
+                </div>
+
+                <div class="form" id="form-keywords">
+                    <label class="wide">Ключевые слова (поиск Google News; можно OR и "точные фразы")
+                        <input id="kw" placeholder='SketchUp OR "Warhammer 40,000"'></label>
+                    <label>Язык
+                        <select id="kw-lang"><option value="ru">Русский</option><option value="en">English</option></select></label>
+                    <label>Тег
+                        <input id="kw-tag" placeholder="DESIGN" maxlength="12"></label>
+                </div>
+
+                <div class="form" id="form-rss" hidden>
+                    <label class="wide">Адрес RSS или Atom (https)
+                        <input id="rss-url" placeholder="https://habr.com/ru/rss/hubs/..."></label>
+                    <label>Источник
+                        <input id="rss-source" placeholder="Habr" maxlength="40"></label>
+                    <label>Тег
+                        <input id="rss-tag" placeholder="TECH" maxlength="12"></label>
+                </div>
+
+                <div class="actions">
+                    <button id="test">ПРОВЕРИТЬ</button>
+                    <button id="add">ДОБАВИТЬ ЛЕНТУ</button>
+                </div>
+                <div id="sample"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        let state = { art: [], news: { feeds: [] }, feedStats: [] };
+        let mode = 'keywords';
+
+        function toast(text, error) {
+            const t = $('toast');
+            t.textContent = text;
+            t.className = 'show' + (error ? ' err' : '');
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => { t.className = ''; }, 3500);
+        }
+
+        async function call(path, options) {
+            const res = await fetch(path, options);
+            if (!res.ok) throw new Error((await res.text()) || 'Ошибка ' + res.status);
+            return res.status === 204 ? null : res.json();
+        }
+
+        const post = (path, data) => call(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        function esc(s) {
+            return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        }
+
+        function ago(time) {
+            const min = Math.round((Date.now() - time) / 60000);
+            if (min < 60) return min + ' мин назад';
+            if (min < 48 * 60) return Math.round(min / 60) + ' ч назад';
+            return Math.round(min / 1440) + ' дн назад';
+        }
+
+        /* ---------- art ---------- */
+        function renderArt() {
+            $('art-count').textContent = state.art.length + ' шт.';
+            $('art').innerHTML = state.art.map(a => `
+                <div class="card">
+                    <img src="art/${encodeURIComponent(a.name)}" alt="" loading="lazy">
+                    <div class="meta">
+                        <span class="name" title="${esc(a.name)}">${esc(a.name.replace(/\.[^.]+$/, ''))}</span>
+                        <button class="danger" data-del="${esc(a.name)}" title="Удалить">✕</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function upload(files) {
+            let done = 0;
+            for (const f of files) {
+                try {
+                    await call('admin/art/upload?name=' + encodeURIComponent(f.name), { method: 'POST', body: f });
+                    done++;
+                } catch (e) {
+                    toast(f.name + ': ' + e.message, true);
+                }
+            }
+            if (done) toast('Загружено: ' + done);
+            await load();
+        }
+
+        $('file').addEventListener('change', e => upload([...e.target.files]));
+        const drop = $('drop');
+        ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+        ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+        drop.addEventListener('drop', e => upload([...e.dataTransfer.files]));
+
+        $('art').addEventListener('click', async e => {
+            const name = e.target.dataset.del;
+            if (!name || !confirm('Удалить «' + name + '»?')) return;
+            try {
+                await post('admin/art/delete', { name });
+                toast('Удалено');
+                await load();
+            } catch (err) { toast(err.message, true); }
+        });
+
+        /* ---------- news ---------- */
+        function renderNews() {
+            const n = state.news;
+            $('showEvery').value = n.showEverySeconds || 90;
+            $('refresh').value = n.refreshMinutes || 30;
+            $('maxAge').value = n.maxAgeHours || 48;
+            $('feed-count').textContent = (n.feeds || []).length + ' лент';
+            $('feeds').innerHTML = (n.feeds || []).map((f, i) => {
+                const st = state.feedStats[i];
+                const count = !st ? '…' : st.error
+                    ? `<span class="bad" title="${esc(st.error)}">ошибка</span>`
+                    : `<span class="ok">${st.count}</span>`;
+                const what = f.keywords
+                    ? `${esc(f.keywords)} <span class="url">(Google News, ${f.lang === 'en' ? 'en' : 'ru'})</span>`
+                    : esc(f.source || new URL(f.url).hostname);
+                return `<tr>
+                    <td class="tag">${esc(f.tag)}</td>
+                    <td><div class="what">${what}</div><div class="url">${esc(f.url)}</div></td>
+                    <td class="count">${count}</td>
+                    <td><button class="danger" data-feed="${i}" title="Убрать ленту">✕</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function googleNewsUrl(keywords, lang) {
+            const region = lang === 'en' ? 'hl=en-US&gl=US&ceid=US:en' : 'hl=ru&gl=RU&ceid=RU:ru';
+            return 'https://news.google.com/rss/search?q=' + encodeURIComponent(keywords + ' when:2d') + '&' + region;
+        }
+
+        // the feed described by the form, or null with a message
+        function formFeed() {
+            if (mode === 'keywords') {
+                const keywords = $('kw').value.trim();
+                if (!keywords) { toast('Впиши ключевые слова', true); return null; }
+                const lang = $('kw-lang').value;
+                return { tag: $('kw-tag').value.trim() || 'NEWS', source: '', keywords, lang, url: googleNewsUrl(keywords, lang) };
+            }
+            const url = $('rss-url').value.trim();
+            if (!/^https:\/\//i.test(url)) { toast('Нужен адрес, начинающийся с https://', true); return null; }
+            return { tag: $('rss-tag').value.trim() || 'NEWS', source: $('rss-source').value.trim(), url };
+        }
+
+        async function saveNews(news, message) {
+            try {
+                const r = await post('admin/news/save', news);
+                state.news = r.news;
+                state.feedStats = r.feedStats;
+                renderNews();
+                toast(message);
+            } catch (e) { toast(e.message, true); }
+        }
+
+        $('test').addEventListener('click', async () => {
+            const feed = formFeed();
+            if (!feed) return;
+            $('test').disabled = true;
+            $('sample').innerHTML = '<div class="sample">Слушаю эфир…</div>';
+            try {
+                const r = await post('admin/news/test', { url: feed.url });
+                $('sample').innerHTML = `<div class="sample"><div>Заголовков в ленте: ${r.count}</div>` +
+                    r.sample.map(s => `<div><span class="when">${ago(s.time)}</span>${esc(s.title)}</div>`).join('') + '</div>';
+            } catch (e) {
+                $('sample').innerHTML = `<div class="sample bad">Не удалось прочитать: ${esc(e.message)}</div>`;
+            }
+            $('test').disabled = false;
+        });
+
+        $('add').addEventListener('click', async () => {
+            const feed = formFeed();
+            if (!feed) return;
+            $('add').disabled = true;
+            await saveNews({ ...state.news, feeds: [...state.news.feeds, feed] }, 'Лента добавлена');
+            $('add').disabled = false;
+            $('sample').innerHTML = '';
+            ['kw', 'kw-tag', 'rss-url', 'rss-source', 'rss-tag'].forEach(id => { $(id).value = ''; });
+        });
+
+        $('feeds').addEventListener('click', e => {
+            const i = e.target.dataset.feed;
+            if (i === undefined) return;
+            const f = state.news.feeds[i];
+            if (!confirm('Убрать ленту «' + (f.keywords || f.source || f.url) + '»?')) return;
+            saveNews({ ...state.news, feeds: state.news.feeds.filter((_, k) => k !== Number(i)) }, 'Лента убрана');
+        });
+
+        $('save-settings').addEventListener('click', () => saveNews({
+            ...state.news,
+            showEverySeconds: $('showEvery').value,
+            refreshMinutes: $('refresh').value,
+            maxAgeHours: $('maxAge').value
+        }, 'Настройки сохранены'));
+
+        document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+            mode = b.dataset.mode;
+            document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+            $('form-keywords').hidden = mode !== 'keywords';
+            $('form-rss').hidden = mode !== 'rss';
+            $('sample').innerHTML = '';
+        }));
+
+        async function load() {
+            try {
+                state = await call('admin/state');
+                renderArt();
+                renderNews();
+            } catch (e) { toast('Сервер обоев не отвечает: ' + e.message, true); }
+        }
+
+        load();
+    </script>
+</body>
+
+</html>

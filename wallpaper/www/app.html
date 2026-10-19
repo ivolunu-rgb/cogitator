@@ -1,0 +1,52 @@
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="device-width initial-scale=1.0" />
+    <title>COGITATOR</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Lively wallpaper tweaks: no sound, keep the picture above the taskbar -->
+    <style>
+        #crt { inset: 0 0 auto 0; height: calc(100% - var(--taskbar, 0px)); }
+
+        /* VT323 has no Cyrillic: Russian headlines borrow pixel Pixelify Sans, scaled to VT323's letter height */
+        @font-face {
+            font-family: 'CogitatorCyrillic';
+            src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TTp0E1bZZNqgg.woff2) format('woff2');
+            unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+            size-adjust: 89%;
+        }
+    </style>
+    <script>
+        // page errors go to the wallpaper server (C:\cogitator\wallpaper\wallpaper.log)
+        let reported = 0;
+        function report(message) {
+            if (location.protocol.startsWith('http') && reported++ < 20) {
+                fetch('log?m=' + encodeURIComponent(message)).catch(() => { });
+            }
+        }
+        window.addEventListener('error', e => report(e.message + ' @ ' + e.filename + ':' + e.lineno));
+        window.addEventListener('unhandledrejection', e => report('unhandled rejection: ' + e.reason));
+
+        window.AudioContext = undefined;
+        window.webkitAudioContext = undefined;
+        document.documentElement.style.setProperty('--taskbar', Math.max(0, screen.height - screen.availHeight) + 'px');
+    </script>
+</head>
+
+<body>
+    <canvas id="crt"></canvas>
+
+
+    <script src="js/content.js"></script>
+    <script src="js/telemetry.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/crt.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>COGITATOR</title>
+    <style>
+        html, body { margin: 0; height: 100%; background: #030b06; }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Lively opens this file from disk, and Ollama rejects requests from file:// pages.
+        // Wait for the local wallpaper server (C:\cogitator\wallpaper\server.js) and move there;
+        // if it never shows up, run the offline copy without machine-spirit whispers.
+        const SERVER = 'http://127.0.0.1:8484/app.html';
+        const GIVE_UP_MS = 60000;
+        const started = Date.now();
+
+        (async function waitForServer() {
+            while (Date.now() - started < GIVE_UP_MS) {
+                try {
+                    await fetch(SERVER, { mode: 'no-cors', cache: 'no-store' });
+                    location.replace(SERVER);
+                    return;
+                } catch { }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            location.replace('file:///C:/cogitator/wallpaper/www/app.html');
+        })();
+    </script>
+</body>
+
+</html>

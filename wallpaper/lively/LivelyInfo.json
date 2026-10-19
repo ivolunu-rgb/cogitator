@@ -1,0 +1,13 @@
+{
+  "AppVersion": "2.2.1.0",
+  "Title": "Cogitator",
+  "Thumbnail": "thumbnail.jpg",
+  "Preview": "",
+  "Desc": "WH40k cogitator console with machine-spirit whispers from local Ollama (qwen2.5:0.5b). Muted.",
+  "Author": "asadovkamran",
+  "License": "",
+  "Contact": "https://github.com/asadovkamran/cogitator",
+  "Type": 1,
+  "Arguments": "",
+  "FileName": "index.html"
+}
