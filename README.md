@@ -1,3 +1,7 @@
+> **В этом форке:** живые обои для рабочего стола на основе Cogitator — показатели ПК, новости, карусель артов, админка и страж. Всё в папке [wallpaper](wallpaper/), там же установка.
+>
+> [![Обои в работе](wallpaper/docs/preview.gif)](wallpaper/)
+
 Cogitator console inspired by WH40k. Runs locally and uses ollama + qwen2.5:0.5b to generate occasional machine-spirit whispers.
 
 Inference is offline. No calls are made beyond localhost. (127.0.0.1:11434)

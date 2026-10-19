@@ -4,6 +4,14 @@
 
 *A Windows live-wallpaper build of Cogitator: real PC vitals, CORRUPTION driven by load, news feeds, art carousel, an admin page and an optional security sentinel. Everything outside this folder is the original project by its author.*
 
+[![Обои в работе: консоль, новости, смена артов по клику (нажмите, чтобы открыть видео)](docs/preview.gif)](docs/cogitator-wallpaper.mp4)
+
+*Нажмите на анимацию, чтобы открыть полное видео (22 с).*
+
+| В покое | Под нагрузкой | Тревога стража |
+| --- | --- | --- |
+| ![Спокойный рабочий стол: консоль, новость, панели AUSPEX, PICT-ARCHIVE и CHRONOMETRUM](docs/desktop-calm.png) | ![CORRUPTION 64%: красные строки, молитвы об успокоении духа, рваные полосы](docs/desktop-corruption.png) | ![Тревога стража на месте арта: правка hosts и кнопки OK / NOT OK](docs/desktop-sentinel.png) |
+
 ## Что внутри
 
 | Путь | Что это |
