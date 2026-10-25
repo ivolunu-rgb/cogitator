@@ -21,6 +21,9 @@ $startup = [Environment]::GetFolderPath('Startup')
 
 function Step($text) { Write-Host "`n>> $text" -ForegroundColor Green }
 
+# files unpacked from a downloaded zip carry "from the internet" and would ask before running
+Get-ChildItem $here -Recurse -File | Unblock-File
+
 function Ensure($name, $id, $test) {
     if (& $test) { Write-Host "   $name is already installed"; return }
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {

@@ -25,8 +25,15 @@
 
 Нужна Windows 10 или 11 с `winget` (он есть в современных Windows). Видеокарта NVIDIA не обязательна: без неё строка GPU просто молчит.
 
-1. Скачайте репозиторий: `git clone https://github.com/ivolunu-rgb/cogitator.git` — или кнопкой **Code → Download ZIP** и распакуйте. Папка может лежать где угодно.
-2. Откройте PowerShell в папке `cogitator\wallpaper` и запустите:
+**Проще всего:**
+
+1. Скачайте **[cogitator-wallpaper.zip](https://github.com/ivolunu-rgb/cogitator/releases/latest/download/cogitator-wallpaper.zip)** и распакуйте куда угодно, например в «Документы».
+2. Дважды щёлкните **`install.cmd`** и выберите тему: `1` — Warhammer 40,000, `2` — Evangelion.
+3. Если Windows спросит про запуск или установку программ — разрешите. Через пару минут обои включатся сами.
+
+Удалить — двойной щелчок по **`uninstall.cmd`**.
+
+**Или из PowerShell** (если склонировали репозиторий: `git clone https://github.com/ivolunu-rgb/cogitator.git`), в папке `cogitator\wallpaper`:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1               # Warhammer 40,000
@@ -35,9 +42,9 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Theme eva    # Evangelio
 
 Установщик сам поставит недостающее (Node.js, Ollama, Lively Wallpaper — их установщики могут спросить разрешение), скачает модель `qwen2.5:0.5b`, добавит сервер обоев в автозагрузку и включит обои. Повторный запуск безопасен: что уже стоит, пропускается.
 
-3. Картинки для карусели: перетащите в админку **http://127.0.0.1:8484/admin** или положите в папку `art`. Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём. Для Евангелиона — свои картинки.
+**Картинки для карусели:** перетащите в админку **http://127.0.0.1:8484/admin** или положите в папку `art`. Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём. Для Евангелиона — свои картинки.
 
-Удалить: `uninstall.ps1` в той же папке (убирает автозапуск, сервер и обои из Lively; ваши картинки и сами программы остаются).
+`uninstall.cmd` / `uninstall.ps1` убирает автозапуск, сервер и обои из Lively; ваши картинки и сами программы (Node.js, Ollama, Lively) остаются.
 
 ## Что внутри
 
