@@ -1,3 +1,24 @@
+/* Theme content: Warhammer 40,000 — the lines the cogitator types, and what it says about events. */
+
+// typed once at start: [text or a function making it, line class, typing speed]
+const BOOT_SCRIPT = () => [
+  ['COGITATOR INTERFACE :: LINK ESTABLISHED', 'boot', 24],
+  ['RITE OF IGNITION :: BEGIN', 'boot', 24],
+  [randBootLogLine, 'boot', 14],
+  [randBootLogLine, 'boot', 14],
+  [randCogitorStatus, 'boot', 16],
+  ['0xF3A9 0x001C 0x77D1 0x0A42', 'hex', 10],
+  [randMachineCant, 'prayer', 26],
+  [randHeresyFlag, 'boot', 22],
+  ['The Machine-God watches through the silicon veil.', 'prayer', 32],
+  ['AWAITING NEXT TRANSMISSION ...', 'boot', 24]
+];
+
+// a status flag that should be typed in red
+const ALARM_FLAG = /WARP-TAINT/;
+
+const NEWS_PROMPT = title => `An astropathic message was intercepted: "${title}". Do not repeat it; speak one short line of your own about it.`;
+
 const bootLines = [
   'SANCTIFIED PROTOCOL :: {CODE} ACCEPTED',
   'COGITATOR LINK :: STABLE',

@@ -43,12 +43,10 @@ function machineStress() {
   return clamp(0.6 * load + 0.4 * heat + 0.3 * mem, 0, 1);
 }
 
+// the machine's mood in the theme's words, calm to worst
 function temperament(stress) {
-  if (stress < 0.2) return 'SERENE';
-  if (stress < 0.45) return 'ATTENTIVE';
-  if (stress < 0.7) return 'RESTLESS';
-  if (stress < 0.85) return 'WRATHFUL';
-  return 'IN TORMENT';
+  const step = stress < 0.2 ? 0 : stress < 0.45 ? 1 : stress < 0.7 ? 2 : stress < 0.85 ? 3 : 4;
+  return THEME.moods[step];
 }
 
 function gpuTempText() {

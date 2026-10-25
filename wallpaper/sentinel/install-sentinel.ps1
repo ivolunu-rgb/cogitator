@@ -11,7 +11,8 @@
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $data = 'C:\ProgramData\CogitatorSentinel'
-$inbox = 'C:\cogitator\wallpaper\sentinel-inbox'
+# the wallpaper server drops verdicts here (next to server.js)
+$inbox = Join-Path (Split-Path -Parent $here) 'sentinel-inbox'
 
 New-Item -ItemType Directory -Force $data, $inbox | Out-Null
 

@@ -319,6 +319,21 @@ function nextNews() {
     return null;
 }
 
+/* ---------- SETTINGS ---------- */
+// settings.json: which theme the wallpaper wears (www/themes/<id>).
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+
+function themeIds() {
+    try { return fs.readdirSync(path.join(ROOT, 'themes')).filter(d => fs.existsSync(path.join(ROOT, 'themes', d, 'theme.js'))); }
+    catch { return []; }
+}
+
+function readSettings() {
+    let s = {};
+    try { s = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); } catch { }
+    return { theme: themeIds().includes(s.theme) ? s.theme : '40k' };
+}
+
 /* ---------- ADMIN ---------- */
 // Backs the admin page (www/admin.html): art uploads and deletions, news feeds and timings.
 const MAX_IMAGE = 25 * 1024 * 1024;
@@ -388,7 +403,7 @@ async function admin(req, res, rel, url) {
             .map(name => ({ name, size: fs.statSync(path.join(ART_DIR, name)).size }));
         let config = {};
         try { config = readNewsConfig(); } catch { }
-        return sendJson(res, { art, news: config, feedStats });
+        return sendJson(res, { art, news: config, feedStats, settings: readSettings(), themes: themeIds() });
     }
 
     if (req.method !== 'POST') return fail(405);
@@ -419,6 +434,12 @@ async function admin(req, res, rel, url) {
             fs.writeFileSync(NEWS_FILE, JSON.stringify(config, null, 2));
             await refreshNews();
             return sendJson(res, { news: config, feedStats });
+        }
+
+        if (rel === '/admin/settings/save') {
+            if (!themeIds().includes(json.theme)) return fail(400, 'Unknown theme');
+            fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ ...readSettings(), theme: json.theme }, null, 2));
+            return sendJson(res, readSettings());
         }
 
         if (rel === '/admin/news/test') {
@@ -461,8 +482,11 @@ const server = http.createServer((req, res) => {
     if (rel === '/news/settings') {
         let config = {};
         try { config = readNewsConfig(); } catch { }
-        return sendJson(res, { showEverySeconds: config.showEverySeconds || 90 });
+        return sendJson(res, { showEverySeconds: config.showEverySeconds || 90, theme: readSettings().theme });
     }
+
+    // the current theme's files (the page asks for theme/theme.js and theme/content.js)
+    if (rel.startsWith('/theme/')) rel = '/themes/' + readSettings().theme + rel.slice('/theme'.length);
 
     // page errors from the wallpaper, for debugging what Lively's browser does differently
     if (rel === '/log') {

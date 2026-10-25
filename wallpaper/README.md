@@ -12,36 +12,55 @@
 | --- | --- | --- |
 | ![Спокойный рабочий стол: консоль, новость, панели AUSPEX, PICT-ARCHIVE и CHRONOMETRUM](docs/desktop-calm.png) | ![CORRUPTION 64%: красные строки, молитвы об успокоении духа, рваные полосы](docs/desktop-corruption.png) | ![Тревога стража на месте арта: правка hosts и кнопки OK / NOT OK](docs/desktop-sentinel.png) |
 
+## Две темы
+
+| Тема | Как выглядит |
+| --- | --- |
+| **Warhammer 40,000** (`40k`) | зелёный ЭЛТ-когитатор Адептус Механикус: AUSPEX, CORRUPTION, молитвы машинному духу, имперская дата |
+| **Evangelion** (`eva`) | оранжевый экран штаба NERV: три шестиугольника MAGI (CPU, GPU, RAM), SYNC RATIO и CONTAMINATION, голосование MELCHIOR / BALTHASAR / CASPER, баннер EMERGENCY при перегрузке, ANGEL DETECTED вместо ереси |
+
+Переключается в админке; посмотреть тему, не переключая обои: `http://127.0.0.1:8484/app.html?theme=eva`.
+
+## Установка
+
+Нужна Windows 10 или 11 с `winget` (он есть в современных Windows). Видеокарта NVIDIA не обязательна: без неё строка GPU просто молчит.
+
+1. Скачайте репозиторий: `git clone https://github.com/ivolunu-rgb/cogitator.git` — или кнопкой **Code → Download ZIP** и распакуйте. Папка может лежать где угодно.
+2. Откройте PowerShell в папке `cogitator\wallpaper` и запустите:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1               # Warhammer 40,000
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Theme eva    # Evangelion
+```
+
+Установщик сам поставит недостающее (Node.js, Ollama, Lively Wallpaper — их установщики могут спросить разрешение), скачает модель `qwen2.5:0.5b`, добавит сервер обоев в автозагрузку и включит обои. Повторный запуск безопасен: что уже стоит, пропускается.
+
+3. Картинки для карусели: перетащите в админку **http://127.0.0.1:8484/admin** или положите в папку `art`. Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём. Для Евангелиона — свои картинки.
+
+Удалить: `uninstall.ps1` в той же папке (убирает автозапуск, сервер и обои из Lively; ваши картинки и сами программы остаются).
+
 ## Что внутри
 
 | Путь | Что это |
 | --- | --- |
-| `server.js` | локальный сервер на `127.0.0.1:8484`: отдаёт страницу обоев и арты, показатели ПК, события, новости, админку; поднимает Ollama, если она упала |
+| `install.ps1`, `uninstall.ps1` | установка и удаление |
+| `server.js` | локальный сервер на `127.0.0.1:8484`: страница обоев, арты, показатели ПК, события, новости, админка; поднимает Ollama, если она упала |
 | `telemetry.ps1` | фоновый помощник сервера: игры, флешки, простой, интернет |
 | `start-server.vbs` | запуск сервера без окна (для автозагрузки) |
 | `news.json` | ленты новостей и частота; удобнее править через админку |
-| `www/` | страница обоев (`app.html`) и админка (`admin.html`) |
+| `www/` | страница обоев (`app.html`), админка (`admin.html`), темы в `www/themes/<тема>/` |
 | `lively/` | то, что кладётся в библиотеку Lively: загрузчик, `LivelyInfo.json`, миниатюра |
 | `art/` | ваши картинки для карусели (в репозитории пусто) |
 | `sentinel/` | страж ORDO SENTINEL: сам скрипт, установщик и удаление |
 
-## Установка
-
-Пути в коде рассчитаны на клон в `C:\cogitator`. В другой папке поправьте пути в `start-server.vbs`, `lively/index.html` и `sentinel/install-sentinel.ps1`.
-
-1. Поставьте [Node.js](https://nodejs.org) 22+, [Ollama](https://ollama.com) и модель: `ollama pull qwen2.5:0.5b`.
-2. Склонируйте репозиторий в `C:\cogitator`.
-3. Положите арты в `wallpaper\art` (JPG, PNG, WebP, GIF). Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём.
-4. Автозапуск сервера: ярлык на `wscript.exe "C:\cogitator\wallpaper\start-server.vbs"` в папке «Автозагрузка» (Win+R → `shell:startup`). Запустите его один раз и сейчас.
-5. Поставьте [Lively Wallpaper](https://github.com/rocksdanister/lively): `winget install --id rocksdanister.LivelyWallpaper --source winget`.
-6. Скопируйте содержимое `wallpaper\lively` в `%LOCALAPPDATA%\Lively Wallpaper\Library\wallpapers\cogitator` и включите обои:
-   `"C:\Program Files\Lively Wallpaper\Lively.exe" setwp --file "%LOCALAPPDATA%\Lively Wallpaper\Library\wallpapers\cogitator"`
-7. Админка: http://127.0.0.1:8484/admin — арты, темы новостей, частота.
+Своя тема = папка в `www/themes/` с двумя файлами: `theme.js` (цвета, шрифты, подписи) и `content.js` (тексты консоли и событий).
 
 ### Страж (по желанию, нужны права администратора)
 
+Из PowerShell в папке `cogitator\wallpaper`:
+
 ```powershell
-Start-Process powershell -Verb RunAs -ArgumentList '-NoExit -ExecutionPolicy Bypass -File C:\cogitator\wallpaper\sentinel\install-sentinel.ps1'
+Start-Process powershell -Verb RunAs -ArgumentList "-NoExit -ExecutionPolicy Bypass -File `"$PWD\sentinel\install-sentinel.ps1`""
 ```
 
 Установщик копирует скрипт в `C:\ProgramData\CogitatorSentinel` (писать туда может только администратор), включает журнал отбитых брандмауэром пакетов и аудит неудачных входов и регистрирует задачу от имени SYSTEM. Первые 3 дня страж учится, что для машины нормально. Удаление: `uninstall-sentinel.ps1` в той же папке. Это сигнализация с эвристикой, а не антивирус.
@@ -52,4 +71,4 @@ Start-Process powershell -Verb RunAs -ArgumentList '-NoExit -ExecutionPolicy Byp
 - Изменения (вердикты стража, загрузка артов, настройки новостей) принимаются только со своих страниц: проверяются заголовки `Host` и `Origin`.
 - Страница обоев берётся с `http://127.0.0.1:8484`, поэтому Ollama не нужно разрешать запросы с `Origin: null`.
 
-Warhammer 40,000 — торговая марка Games Workshop. Любительский проект для личного использования.
+Warhammer 40,000 — торговая марка Games Workshop; Neon Genesis Evangelion — khara, Inc. Любительский проект для личного использования.

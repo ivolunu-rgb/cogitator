@@ -238,7 +238,7 @@ function nextEndlessLine() {
   else if (roll < mix.boot + mix.hex + mix.prayer + mix.warn) {
     const heresy = randHeresyFlag();
     text = heresy;
-    if (heresy.includes('WARP-TAINT')) {
+    if (ALARM_FLAG.test(heresy)) {
       cls = 'warn';
     } else {
       cls = 'boot';
@@ -330,22 +330,12 @@ async function boot() {
   await showEmblem();
   await sleep(700);
 
-  await typeLine('COGITATOR INTERFACE :: LINK ESTABLISHED', 'boot', 24);
-  await typeLine('RITE OF IGNITION :: BEGIN', 'boot', 24);
-
-  await typeLine(randBootLogLine(), 'boot', 14);
-  await typeLine(randBootLogLine(), 'boot', 14);
-  await typeLine(randCogitorStatus(), 'boot', 16);
-
-  await typeLine('0xF3A9 0x001C 0x77D1 0x0A42', 'hex', 10);
-
-  await typeLine(randMachineCant(), 'prayer', 26);
-  await typeLine(randHeresyFlag(), 'boot', 22);
-
-  await typeLine('The Machine-God watches through the silicon veil.', 'prayer', 32);
-
-  await sleep(700);
-  await typeLine('AWAITING NEXT TRANSMISSION ...', 'boot', 24);
+  const script = BOOT_SCRIPT();
+  for (let i = 0; i < script.length; i++) {
+    const [line, cls, speed] = script[i];
+    if (i === script.length - 1) await sleep(700);
+    await typeLine(typeof line === 'function' ? line() : line, cls, speed);
+  }
 }
 
 /* ---------- EVENTS ---------- */
@@ -379,7 +369,11 @@ function loadNewsSettings() {
   if (!location.protocol.startsWith('http')) return;
   fetch('news/settings', { cache: 'no-store' })
     .then(r => r.json())
-    .then(s => { newsEveryMs = s.showEverySeconds * 1000; })
+    .then(s => {
+      newsEveryMs = s.showEverySeconds * 1000;
+      // the theme was switched in the admin page: start again in the new one
+      if (s.theme && s.theme !== THEME.id && !THEME_PREVIEW) location.reload();
+    })
     .catch(() => { });
 }
 loadNewsSettings();
@@ -404,12 +398,11 @@ async function fetchNews() {
 
 async function announceNews(n) {
   triggerRoll();
-  const from = n.source ? ' :: ' + n.source.toUpperCase() : '';
-  await typeLine('+++ ASTROPATHIC RELAY :: ' + n.tag + ' :: ' + ageText(n.time) + from + ' +++', 'newshead', 16);
+  await typeLine(THEME.newsHeader(n, ageText(n.time)), 'newshead', 16);
   await typeLine(n.title, 'news', 24);
 
   if (Math.random() < 0.5) {
-    const said = await askMachineSpirit(`An astropathic message was intercepted: "${n.title}". Do not repeat it; speak one short line of your own about it.`);
+    const said = await askMachineSpirit(NEWS_PROMPT(n.title));
     // the small model likes to parrot the headline back; keep only its own words
     for (const l of said.filter(l => !echoes(l, n.title))) {
       await typeLine(l, 'spirit', 26);
@@ -457,7 +450,7 @@ async function endlessMode() {
     if (Date.now() > phaseUntil) {
       shiftPhase();
       triggerScreenGlitch();
-      await typeLine('PHASE SHIFT :: ' + phase + ' PROTOCOLS ENGAGED', 'boot', 20);
+      await typeLine(THEME.phaseShift(phase), 'boot', 20);
     }
 
     const spiritChance = SPIRIT_CHANCE *

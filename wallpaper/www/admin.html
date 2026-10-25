@@ -176,6 +176,14 @@
         <div class="sub">Управление обоями. Изменения применяются сами, перезапускать ничего не нужно.</div>
 
         <section>
+            <h2>ТЕМА</h2>
+            <div class="body">
+                <p class="hint">Обои перестроятся в новой теме в течение минуты.</p>
+                <div class="tabs" id="themes"></div>
+            </div>
+        </section>
+
+        <section>
             <h2>PICT-ARCHIVE <small id="art-count"></small></h2>
             <div class="body">
                 <p class="hint">Арты для карусели справа. Новые покажутся на обоях в течение минуты, первыми в очереди.</p>
@@ -419,9 +427,28 @@
             $('sample').innerHTML = '';
         }));
 
+        /* ---------- theme ---------- */
+        const THEME_NAMES = { '40k': 'WARHAMMER 40,000', eva: 'EVANGELION' };
+
+        function renderThemes() {
+            $('themes').innerHTML = (state.themes || []).map(id =>
+                `<button data-theme="${esc(id)}" class="${state.settings.theme === id ? 'on' : ''}">${esc(THEME_NAMES[id] || id.toUpperCase())}</button>`).join('');
+        }
+
+        $('themes').addEventListener('click', async e => {
+            const theme = e.target.dataset.theme;
+            if (!theme || theme === state.settings.theme) return;
+            try {
+                state.settings = await post('admin/settings/save', { theme });
+                renderThemes();
+                toast('Тема: ' + (THEME_NAMES[theme] || theme));
+            } catch (err) { toast(err.message, true); }
+        });
+
         async function load() {
             try {
                 state = await call('admin/state');
+                renderThemes();
                 renderArt();
                 renderNews();
             } catch (e) { toast('Сервер обоев не отвечает: ' + e.message, true); }

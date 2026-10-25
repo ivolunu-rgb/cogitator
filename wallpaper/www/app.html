@@ -6,7 +6,7 @@
     <title>COGITATOR</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Roboto+Condensed:wght@400;700&family=Shippori+Mincho+B1:wght@800&display=swap">
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Lively wallpaper tweaks: no sound, keep the picture above the taskbar -->
@@ -22,7 +22,7 @@
         }
     </style>
     <script>
-        // page errors go to the wallpaper server (C:\cogitator\wallpaper\wallpaper.log)
+        // page errors go to the wallpaper server (wallpaper.log next to server.js)
         let reported = 0;
         function report(message) {
             if (location.protocol.startsWith('http') && reported++ < 20) {
@@ -42,7 +42,13 @@
     <canvas id="crt"></canvas>
 
 
-    <script src="js/content.js"></script>
+    <script>
+        // the server hands out the theme chosen in the admin page; the offline copy falls back to 40k;
+        // ?theme=<id> previews a theme without switching the wallpaper
+        const THEME_PREVIEW = (new URLSearchParams(location.search).get('theme') || '').replace(/[^a-z0-9]/g, '');
+        const THEME_DIR = THEME_PREVIEW ? 'themes/' + THEME_PREVIEW + '/' : location.protocol.startsWith('http') ? 'theme/' : 'themes/40k/';
+        document.write('<script src="' + THEME_DIR + 'theme.js"><\/script><script src="' + THEME_DIR + 'content.js"><\/script>');
+    </script>
     <script src="js/telemetry.js"></script>
     <script src="js/renderer.js"></script>
     <script src="js/crt.js"></script>
