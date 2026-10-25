@@ -1,6 +1,6 @@
 # Removes the Cogitator live wallpaper: its autostart, the running server and its place in Lively.
 # Node.js, Ollama and Lively themselves stay (remove them in Windows settings if you like),
-# and so does this folder with your pictures. The sentinel has its own uninstall-sentinel.ps1.
+# and so does this folder with your pictures.
 $startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Cogitator wallpaper server.lnk'
 $library = "$env:LOCALAPPDATA\Lively Wallpaper\Library\wallpapers\cogitator"
 $livelyExe = "$env:ProgramFiles\Lively Wallpaper\Lively.exe"

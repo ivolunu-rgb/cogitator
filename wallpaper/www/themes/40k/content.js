@@ -206,6 +206,15 @@ function eventLines(e) {
         'THE RITE OF PURGING FAILED :: ' + alertSubject(e.alert),
         e.alert.note ? 'CAUSE :: ' + e.alert.note : 'CONSULT THE SENTINEL LOG'
       ] };
+    case 'track':
+      return { cls: 'news', lines: [`VOX-CHOIR :: ${e.artist ? upper(e.artist) + ' — ' : ''}${upper(e.title)}`] };
+    case 'disk-low':
+      return { cls: 'alarm', lines: [`MEMORY VAULT ${e.letter} NEARLY FULL :: ${e.freeGb} GB REMAIN`, 'PURGE THE UNNEEDED DATA-RELICS'] };
+    case 'weather':
+      return { cls: e.code >= 95 ? 'alarm' : 'event', lines: [
+        `ATMOSPHERICS :: ${weatherWords(e.code)} OVER ${upper(e.city)}`,
+        e.code >= 95 ? 'WARP-STORM CONDITIONS :: SHIELD THE GENERATOR-SOUL' : 'SEAL THE VENTS :: MOISTURE IS HERESY'
+      ] };
     case 'spirit-restart':
       return { cls: 'event', lines: ['MACHINE-SPIRIT FELL SILENT :: RITE OF REAWAKENING PERFORMED', 'THE SPIRIT STIRS ONCE MORE :: PRAISE THE OMNISSIAH'] };
     case 'new-day':
@@ -221,6 +230,7 @@ function eventSpiritPrompt(e) {
     case 'game-stop': return `The war-rite "${e.name}" has ended after ${e.minutes} minutes. Speak one short line on the battle's end.`;
     case 'return': return `The keeper of this machine has returned after ${e.minutes} minutes away. Speak one short line on the vigil kept.`;
     case 'gpu-hot': return 'Your generator-soul is overheating. Speak one short, pained line.';
+    case 'track': return `The vox-choir now sings "${e.title}"${e.artist ? ' by ' + e.artist : ''}. Speak one short line about the hymn.`;
     case 'heresy': return `Heresy was detected within this machine: "${e.alert.title}". Speak one short, alarmed line.`;
   }
   return null;

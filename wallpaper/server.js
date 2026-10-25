@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const dns = require('dns');
+const net = require('net');
 const { spawn, execFile } = require('child_process');
 
 // The local DNS answers "::" for some hosts; prefer the real IPv4 addresses for news feeds.
@@ -110,7 +111,71 @@ function onSystem(s) {
 
     prevIdle = s.idle;
     firstSystem = false;
-    Object.assign(vitals, { games, drives, idle: s.idle, online: s.online });
+    // a new track is announced once it actually plays
+    const m = s.media;
+    const track = m && m.playing ? (m.artist || '') + '|' + m.title : null;
+    if (track && track !== lastTrack) emit('track', { artist: m.artist || '', title: m.title });
+    if (track) lastTrack = track;
+
+    // a disk running out of room, once until it recovers
+    for (const d of s.disks || []) {
+        const low = d.free < 5 * 1073741824 || d.free / d.total < 0.05;
+        if (low && !lowDisks.has(d.letter)) emit('disk-low', { letter: d.letter, freeGb: Math.round(d.free / 1073741824) });
+        if (low) lowDisks.add(d.letter); else lowDisks.delete(d.letter);
+    }
+
+    Object.assign(vitals, { games, drives, idle: s.idle, online: s.online, media: s.media || null, disks: s.disks || [] });
+    vitals.net = { ...(vitals.net || {}), ...(s.net || {}) };
+}
+
+let lastTrack = null;
+const lowDisks = new Set();
+
+/* ---------- PING ---------- */
+// how long a TCP handshake with a public DNS server takes; no ICMP, no admin rights needed
+function measurePing() {
+    const started = Date.now();
+    const socket = net.connect({ host: '1.1.1.1', port: 443 });
+    socket.setTimeout(3000);
+    const done = ms => {
+        socket.destroy();
+        vitals.net = { ...(vitals.net || {}), ping: ms };
+    };
+    socket.once('connect', () => done(Date.now() - started));
+    socket.once('timeout', () => done(null));
+    socket.once('error', () => done(null));
+}
+
+/* ---------- WEATHER ---------- */
+// Open-Meteo: free, no key. The city comes from the admin page (settings.json).
+let weatherTimer = null;
+let weatherSpot = null;   // { name, lat, lon } of the last looked-up city
+let lastWeatherGroup = null;
+
+async function refreshWeather() {
+    clearTimeout(weatherTimer);
+    weatherTimer = setTimeout(refreshWeather, 15 * 60000);
+    const city = readSettings().city;
+    if (!city) { vitals.weather = { error: 'no-city' }; return; }
+    try {
+        if (!weatherSpot || weatherSpot.query !== city) {
+            const geo = await (await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name=' + encodeURIComponent(city),
+                { signal: AbortSignal.timeout(15000) })).json();
+            const r = geo.results && geo.results[0];
+            if (!r) { vitals.weather = { error: 'unknown-city' }; return; }
+            weatherSpot = { query: city, name: r.name, lat: r.latitude, lon: r.longitude };
+        }
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + weatherSpot.lat + '&longitude=' + weatherSpot.lon +
+            '&current=temperature_2m,weather_code,wind_speed_10m&wind_speed_unit=ms';
+        const c = (await (await fetch(url, { signal: AbortSignal.timeout(15000) })).json()).current;
+        vitals.weather = { city: weatherSpot.name, temp: c.temperature_2m, code: c.weather_code, wind: c.wind_speed_10m };
+        // rain and storms are worth a line in the console when they start
+        const group = c.weather_code >= 95 ? 2 : c.weather_code >= 51 ? 1 : 0;
+        if (lastWeatherGroup !== null && group > lastWeatherGroup) emit('weather', { code: c.weather_code, temp: c.temperature_2m, city: weatherSpot.name });
+        lastWeatherGroup = group;
+    } catch {
+        vitals.weather = { error: 'offline' };
+    }
 }
 
 function watchSystem() {
@@ -165,49 +230,13 @@ async function watchOllama() {
     emit('spirit-restart', {});
 }
 
-/* ---------- SENTINEL ---------- */
-// The sentinel (sentinel\sentinel.ps1) runs as SYSTEM and writes its state here; verdicts go back through the inbox.
-const SENTINEL_DIR = 'C:\\ProgramData\\CogitatorSentinel';
-const SENTINEL_INBOX = path.join(__dirname, 'sentinel-inbox');
-const ORIGIN = 'http://127.0.0.1:' + PORT;
-
-function readSentinel() {
-    try {
-        const state = JSON.parse(fs.readFileSync(path.join(SENTINEL_DIR, 'state.json'), 'utf8').replace(/^\uFEFF/, ''));
-        // the sentinel rewrites its state every few seconds; an old file means it has stopped
-        return Date.now() - state.updated < 60000 ? state : { running: false, installed: true };
-    } catch {
-        return { running: false, installed: fs.existsSync(SENTINEL_DIR) };
-    }
-}
-
+/* ---------- REQUEST ORIGIN ---------- */
 // Changes may only come from our own pages (wallpaper, admin): same host and origin,
 // so no web page open in a browser can click or upload for you.
+const ORIGIN = 'http://127.0.0.1:' + PORT;
+
 function sameOrigin(req) {
     return req.headers.host === '127.0.0.1:' + PORT && req.headers.origin === ORIGIN;
-}
-
-function decide(req, res) {
-    if (!sameOrigin(req)) {
-        res.writeHead(403);
-        return res.end();
-    }
-    let body = '';
-    req.setEncoding('utf8');
-    req.on('data', chunk => { body += chunk; if (body.length > 1000) req.destroy(); });
-    req.on('end', () => {
-        let v;
-        try { v = JSON.parse(body); } catch { }
-        if (!v || !/^[0-9a-f]{12}$/.test(v.id) || !['ok', 'ack', 'purge'].includes(v.verdict)) {
-            res.writeHead(400);
-            return res.end();
-        }
-        fs.mkdirSync(SENTINEL_INBOX, { recursive: true });
-        fs.writeFile(path.join(SENTINEL_INBOX, v.id + '.json'), JSON.stringify({ id: v.id, verdict: v.verdict }), err => {
-            res.writeHead(err ? 500 : 204);
-            res.end();
-        });
-    });
 }
 
 /* ---------- NEWS ---------- */
@@ -331,7 +360,10 @@ function themeIds() {
 function readSettings() {
     let s = {};
     try { s = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')); } catch { }
-    return { theme: themeIds().includes(s.theme) ? s.theme : '40k' };
+    return {
+        theme: themeIds().includes(s.theme) ? s.theme : '40k',
+        city: typeof s.city === 'string' ? s.city.slice(0, 60) : ''
+    };
 }
 
 /* ---------- ADMIN ---------- */
@@ -437,9 +469,15 @@ async function admin(req, res, rel, url) {
         }
 
         if (rel === '/admin/settings/save') {
-            if (!themeIds().includes(json.theme)) return fail(400, 'Unknown theme');
-            fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ ...readSettings(), theme: json.theme }, null, 2));
-            return sendJson(res, readSettings());
+            const next = readSettings();
+            if (json.theme !== undefined) {
+                if (!themeIds().includes(json.theme)) return fail(400, 'Unknown theme');
+                next.theme = json.theme;
+            }
+            if (json.city !== undefined) next.city = String(json.city).trim().slice(0, 60);
+            fs.writeFileSync(SETTINGS_FILE, JSON.stringify(next, null, 2));
+            if (json.city !== undefined) await refreshWeather();
+            return sendJson(res, { ...readSettings(), weather: vitals.weather });
         }
 
         if (rel === '/admin/news/test') {
@@ -470,7 +508,6 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    if (req.method === 'POST' && rel === '/sentinel/decide') return decide(req, res);
     if (rel.startsWith('/admin/')) return admin(req, res, rel, url);
     if (req.method !== 'GET' && req.method !== 'HEAD') {
         res.writeHead(405);
@@ -502,7 +539,7 @@ const server = http.createServer((req, res) => {
 
     if (rel === '/telemetry') {
         const since = Number(url.searchParams.get('since')) || 0;
-        return sendJson(res, { vitals, lastEventId, events: events.filter(e => e.id > since), sentinel: readSentinel() });
+        return sendJson(res, { vitals, lastEventId, events: events.filter(e => e.id > since) });
     }
 
     if (rel === '/art/index.json') {
@@ -536,5 +573,8 @@ server.listen(PORT, '127.0.0.1', () => {
     watchGpu();
     watchSystem();
     refreshNews();
+    refreshWeather();
+    measurePing();
+    setInterval(measurePing, 10000);
     setInterval(watchOllama, 30000);
 });

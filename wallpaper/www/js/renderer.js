@@ -23,7 +23,7 @@ const NERV = THEME.style === 'nerv';
 const SCALE = 2;            // text size relative to the original console
 const PANEL_SHARE = 0.45;   // right column: vitals, art carousel, chronometrum
 const VITALS_H = THEME.vitalsH || 205;   // panel heights, in units of SCALE
-const CHRONO_H = 88;
+const CHRONO_H = 132;
 const ART_SECONDS = 30;     // how long each picture stays
 const ART_FADE_MS = 1500;
 
@@ -127,21 +127,8 @@ function inside(r, e) {
   return r && e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h;
 }
 
-// Lively passes desktop clicks through: sentinel buttons first, then a click on the picture brings the next one.
-let sentinelButtons = [];
+// Lively passes desktop clicks through: a click on the picture brings the next one.
 window.addEventListener('mousedown', e => {
-  const b = sentinelButtons.find(btn => inside(btn, e));
-  if (b) {
-    // a stray click on the desktop must not purge anything: NOT OK wants a second click
-    const c = sentinel.confirm;
-    if (b.verdict === 'purge' && !(c && c.id === b.alert.id && Date.now() < c.until)) {
-      sentinel.confirm = { id: b.alert.id, until: Date.now() + 5000 };
-      view.dirty = true;
-      return;
-    }
-    sendVerdict(b.alert, b.verdict);
-    return;
-  }
   if (inside(art.rect, e)) {
     showNextArt();
     restartArtTimer();
@@ -386,23 +373,21 @@ function drawVitals(ctx, x, y, w, h) {
   ctx.fillText(L.net(v.online !== false), barX, cy);
   cy += ROW;
 
-  // the sentinel's wards, and how many knocks the firewall turned away today
-  const s = telemetry.sentinel;
-  const heresy = sentinelPending().length;
-  const W = THEME.wards;
-  let wards = W.pure, wardsRed = 0;
-  if (!s || !s.running) { wards = s && s.installed ? W.silent : W.missing; wardsRed = 0.45; }
-  else if (heresy) { wards = W.heresy(heresy); wardsRed = 1; }
-  else if (s.learning) wards = W.learning(Math.max(1, Math.ceil((s.learningUntil - Date.now()) / 864e5)));
-  ctx.fillStyle = tone(0.55);
-  ctx.fillText(L.wards, left, cy);
-  ctx.fillStyle = tone(0.95, wardsRed);
-  ctx.fillText(wards, valueX, cy);
-  if (s && s.running) {
-    ctx.fillStyle = tone(0.8, s.knocks.outer ? 0.45 : 0);
-    ctx.fillText(L.knocks(s.knocks), barX, cy);
+  // network: traffic and ping; disks: the fullest one sets the bar
+  const n = v.net;
+  if (n) {
+    const mbit = bytes => (bytes * 8 / 1e6).toFixed(1);
+    const ping = isFinite(n.ping) ? n.ping + ' MS' : '-- MS';
+    row(L.netRow, '↓' + mbit(n.down) + '  ↑' + mbit(n.up) + ' MBIT  ' + ping, Math.min(1, n.down * 8 / 1e8),
+      !isFinite(n.ping) ? 1 : n.ping > 150 ? 0.45 : 0);
   }
-  cy += ROW;
+  const disks = v.disks || [];
+  if (disks.length) {
+    const used = d => 1 - d.free / d.total;
+    const worst = disks.reduce((a, d) => used(d) > used(a) ? d : a);
+    const text = disks.slice(0, 3).map(d => d.letter + ' ' + Math.round(d.free / 1073741824) + 'G').join('  ') + ' ' + L.free;
+    row(L.disks, text, used(worst));
+  }
 
   drawPulse(ctx, left, cy + 4 * SCALE, x + w - 14 * SCALE - left, y + h - cy - 16 * SCALE, redness);
 }
@@ -422,6 +407,25 @@ function drawChrono(ctx, x, y, w, h) {
   ctx.font = font(16);
   ctx.fillStyle = tone(0.6);
   ctx.fillText(THEME.dateSmall(d), left, cy + 31 * SCALE);
+
+  // the weather outside and the music playing
+  const v = telemetry.vitals || {};
+  const L = THEME.labels;
+  const maxW = w - 28 * SCALE;
+  ctx.font = font(17);
+  ctx.fillStyle = tone(0.85, v.weather && v.weather.code >= 95 ? 0.45 : 0);
+  fitText(ctx, L.weather + ' :: ' + weatherText(v.weather), left, cy + 55 * SCALE, maxW);
+  ctx.fillStyle = COLORS.news;
+  fitText(ctx, L.audio + ' :: ' + mediaText(v.media), left, cy + 76 * SCALE, maxW);
+}
+
+// one line, cut with an ellipsis when it does not fit
+function fitText(ctx, text, x, y, maxW) {
+  if (ctx.measureText(text).width > maxW) {
+    while (text.length > 1 && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+    text += '…';
+  }
+  ctx.fillText(text, x, y);
 }
 
 function drawArt(ctx, x, y, w, h, now) {
@@ -443,72 +447,6 @@ function drawArt(ctx, x, y, w, h, now) {
   }
   ctx.globalAlpha = 1;
   art.rect = r;
-}
-
-// An alert awaiting a verdict takes the art's place.
-function drawSentinel(ctx, x, y, w, h, now) {
-  const list = sentinelPending();
-  const a = list[0];
-  const L = THEME.labels;
-  const red = a.severity === 'low' ? 0.45 : 1;
-  const title = L.sentinel + (list.length > 1 ? ' :: 1 OF ' + list.length : '');
-  let cy = drawFrame(ctx, x, y, w, h, title, (now % 1200) < 600 ? red : red * 0.6) + 12 * SCALE;
-  const left = x + 14 * SCALE;
-  const maxW = w - 28 * SCALE;
-
-  const BTN_H = 34 * SCALE;
-  const btnY = y + h - BTN_H - 14 * SCALE;
-
-  ctx.font = font(17);
-  ctx.fillStyle = tone(0.7, red);
-  ctx.fillText('[' + a.severity.toUpperCase() + ']  ' + clockTime(a.time), left, cy);
-  cy += 22 * SCALE;
-
-  const heading = THEME.alertTitle(a);
-  ctx.font = font(20, NERV ? 700 : '');
-  ctx.fillStyle = tone(1, red);
-  ctx.shadowColor = tone(0.6, red);
-  ctx.shadowBlur = 8 * SCALE;
-  for (const [s, e] of wrapRanges(ctx, heading, maxW)) {
-    ctx.fillText(heading.slice(s, e), left, cy);
-    cy += 24 * SCALE;
-  }
-  ctx.shadowBlur = 0;
-  cy += 6 * SCALE;
-
-  ctx.font = font(16);
-  ctx.fillStyle = tone(0.75);
-  for (const line of a.lines) {
-    // details in full (commands can be long); only the buttons below set the limit
-    for (const [s, e] of wrapRanges(ctx, line, maxW)) {
-      if (cy + 20 * SCALE > btnY - 8 * SCALE) break;
-      ctx.fillText(line.slice(s, e), left, cy);
-      cy += 20 * SCALE;
-    }
-  }
-
-  // buttons
-  const confirming = sentinel.confirm && sentinel.confirm.id === a.id && Date.now() < sentinel.confirm.until;
-  const actions = a.actions.includes('purge')
-    ? [['ok', L.ok], ['purge', confirming ? L.confirm : L.purge]]
-    : [['ack', L.ack]];
-  const gap = 14 * SCALE;
-  const bw = (maxW - gap * (actions.length - 1)) / actions.length;
-  sentinelButtons = actions.map(([verdict, label], i) => {
-    const b = { x: left + i * (bw + gap), y: btnY, w: bw, h: BTN_H, verdict, alert: a };
-    const r = verdict === 'purge' ? 1 : 0;
-    const lit = verdict === 'purge' && confirming && (now % 500) < 250;
-    ctx.fillStyle = tone(lit ? 0.45 : 0.16, r);
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.strokeStyle = tone(0.9, r);
-    ctx.lineWidth = 2 * SCALE;
-    ctx.strokeRect(b.x, b.y, b.w, b.h);
-    ctx.lineWidth = 1;
-    ctx.font = font(19, NERV ? 700 : '');
-    ctx.fillStyle = tone(1, r);
-    ctx.fillText(label, b.x + (b.w - ctx.measureText(label).width) / 2, b.y + 6 * SCALE);
-    return b;
-  });
 }
 
 /* ---------- NERV EXTRAS ---------- */
@@ -625,13 +563,7 @@ function drawScene(w, h, now) {
   drawChrono(ctx, colX, bottom - chronoH, colW, chronoH);
   const midY = top + vitalsH + GAP;
   const midH = bottom - chronoH - midY - GAP;
-  sentinelButtons = [];
-  if (sentinelPending().length) {
-    art.rect = null;
-    drawSentinel(ctx, colX, midY, colW, midH, now);
-  } else if (art.cur) {
-    drawArt(ctx, colX, midY, colW, midH, now);
-  }
+  if (art.cur) drawArt(ctx, colX, midY, colW, midH, now);
   const textW = colX - PAD * 2;
 
   const LINE_H = 28 * SCALE;

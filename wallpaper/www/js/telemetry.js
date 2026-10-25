@@ -1,8 +1,7 @@
 /* ---------- TELEMETRY (from the wallpaper server) ---------- */
-// Real machine readings and events from C:\cogitator\wallpaper\server.js; the offline copy has none.
+// Real machine readings and events from server.js; the offline copy has none.
 const telemetry = {
   vitals: null,
-  sentinel: null,
   lastId: null,
   history: []   // recent max(CPU, GPU) load for the pulse line
 };
@@ -16,8 +15,6 @@ function pollTelemetry() {
       // events from before this page loaded are old news; after a pause the backlog is "while you were away"
       if (telemetry.lastId !== null) eventQueue.push(...data.events);
       telemetry.lastId = data.lastEventId;
-      telemetry.sentinel = data.sentinel;
-      noticeSentinel(data.sentinel);
 
       const { cpu, gpu } = data.vitals;
       telemetry.history.push(Math.max(cpu ? cpu.load : 0, gpu && isFinite(gpu.load) ? gpu.load : 0));
@@ -54,45 +51,33 @@ function gpuTempText() {
   return v && v.gpu && isFinite(v.gpu.temp) ? v.gpu.temp + '°C' : '??°C';
 }
 
-/* ---------- SENTINEL ---------- */
-// Alerts from the sentinel (C:\cogitator\wallpaper\sentinel), decided with the OK / NOT OK buttons.
-const sentinel = {
-  seen: null,            // alert ids already announced in the console
-  decided: new Set(),    // verdicts sent from this page, hidden until the sentinel confirms
-  confirm: null          // { id, until } after a first click on NOT OK
-};
-
-function sentinelPending() {
-  const s = telemetry.sentinel;
-  if (!s || !s.running || !s.pending) return [];
-  return s.pending.filter(a => !sentinel.decided.has(a.id));
+/* ---------- WEATHER AND MUSIC ---------- */
+// WMO weather codes, as Open-Meteo reports them
+function weatherWords(code) {
+  if (code === 0) return 'CLEAR';
+  if (code <= 2) return 'PARTLY CLOUDY';
+  if (code === 3) return 'OVERCAST';
+  if (code <= 48) return 'FOG';
+  if (code <= 57) return 'DRIZZLE';
+  if (code <= 67) return 'RAIN';
+  if (code <= 77) return 'SNOW';
+  if (code <= 82) return 'SHOWERS';
+  if (code <= 86) return 'SNOW SHOWERS';
+  return 'THUNDERSTORM';
 }
 
-// new alerts, and purges that failed, are announced in the console once
-function noticeSentinel(state) {
-  const live = state && state.running;
-  const news = [
-    ...(live && state.pending || []).map(alert => ({ key: alert.id + ':pending', type: 'heresy', alert })),
-    ...(live && state.recent || []).filter(a => a.status === 'failed').map(alert => ({ key: alert.id + ':failed', type: 'verdict-failed', alert }))
-  ];
-  if (sentinel.seen) {
-    for (const n of news) {
-      if (!sentinel.seen.has(n.key)) eventQueue.push({ type: n.type, time: Date.now(), alert: n.alert });
-    }
-  }
-  sentinel.seen = new Set([...(sentinel.seen || []), ...news.map(n => n.key)]);
+function weatherText(w) {
+  if (!w) return 'NO DATA';
+  if (w.error === 'no-city') return 'SET YOUR CITY IN THE ADMIN PAGE';
+  if (w.error === 'unknown-city') return 'CITY NOT FOUND :: CHECK THE ADMIN PAGE';
+  if (w.error) return 'NO SIGNAL';
+  const t = Math.round(w.temp);
+  return upper(w.city) + '  ' + (t > 0 ? '+' : '') + t + '°C  ' + weatherWords(w.code) + '  WIND ' + Math.round(w.wind) + ' M/S';
 }
 
-function sendVerdict(alert, verdict) {
-  sentinel.decided.add(alert.id);
-  sentinel.confirm = null;
-  fetch('sentinel/decide', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: alert.id, verdict })
-  }).catch(() => { });
-  eventQueue.push({ type: 'verdict', time: Date.now(), alert, verdict });
-  view.dirty = true;
+function mediaText(m) {
+  if (!m || !m.title) return 'SILENCE';
+  return (m.artist ? m.artist + ' — ' : '') + m.title + (m.playing ? '' : '  [PAUSED]');
 }
 
 /* ---------- CHRONOMETRUM ---------- */

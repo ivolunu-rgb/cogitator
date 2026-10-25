@@ -7,6 +7,7 @@ const THEME = {
   alarm: [255, 75, 58],         // what it turns into under strain
   font: 'VT323, CogitatorCyrillic, monospace',
   fontScale: 1,
+  vitalsH: 226,
   glyph: '⚙ ',                  // before every panel title
   emblem: 'assets/emblem.png',  // boot splash
 
@@ -34,6 +35,11 @@ const THEME = {
     ram: 'COGITATIVE STORE',
     mood: 'TEMPERAMENT',
     net: up => 'NOOSPHERE :: ' + (up ? 'LINKED' : 'SEVERED'),
+    netRow: 'DATA-STREAM',
+    disks: 'MEMORY VAULTS',
+    free: 'FREE',
+    weather: 'ATMOSPHERICS',
+    audio: 'VOX-CHOIR',
     wards: 'WARDS',
     knocks: k => 'KNOCKS :: ' + k.outer + ' VOID / ' + k.lan + ' LAN',
     art: 'PICT-ARCHIVE :: ',

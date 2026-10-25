@@ -161,8 +161,9 @@ function updateStatus() {
   if (stress === null) {
     corruption += rand(-2, 3);
   } else {
-    // unjudged heresy unsettles the spirit too
-    const target = 3 + 92 * Math.pow(stress, 1.5) + Math.min(30, sentinelPending().length * 12);
+    // a thunderstorm outside unsettles the screen too
+    const storm = telemetry.vitals && telemetry.vitals.weather && telemetry.vitals.weather.code >= 95 ? 15 : 0;
+    const target = 3 + 92 * Math.pow(stress, 1.5) + storm;
     corruption += (target - corruption) * 0.15 + rand(-2, 2);
   }
   if (Math.random() < 0.06) {
@@ -340,6 +341,8 @@ async function boot() {
 
 /* ---------- EVENTS ---------- */
 async function announceEvent(e) {
+  // tracks that played while the wallpaper was paused are not worth a backlog
+  if (e.type === 'track' && Date.now() - e.time > 60000) return;
   const said = eventLines(e);
   if (!said) return;
 

@@ -7,7 +7,6 @@
 #   3. starts the wallpaper server now and at every logon (a shortcut in the Startup folder)
 #   4. puts the wallpaper into Lively's library and turns it on
 # The admin page is then at http://127.0.0.1:8484/admin. Remove with uninstall.ps1.
-# The optional sentinel is separate and needs administrator rights: sentinel\install-sentinel.ps1.
 param([ValidateSet('40k', 'eva')][string]$Theme = '40k')
 
 $ErrorActionPreference = 'Stop'

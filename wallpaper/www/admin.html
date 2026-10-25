@@ -176,10 +176,16 @@
         <div class="sub">Управление обоями. Изменения применяются сами, перезапускать ничего не нужно.</div>
 
         <section>
-            <h2>ТЕМА</h2>
+            <h2>ТЕМА И ПОГОДА</h2>
             <div class="body">
                 <p class="hint">Обои перестроятся в новой теме в течение минуты.</p>
                 <div class="tabs" id="themes"></div>
+                <div class="settings" style="margin: 18px 0 0">
+                    <label>Город для погоды
+                        <input id="city" placeholder="Москва" maxlength="60" style="width: 260px"></label>
+                    <button id="save-city">СОХРАНИТЬ</button>
+                    <span id="weather-now" class="hint" style="margin: 0"></span>
+                </div>
             </div>
         </section>
 
@@ -430,7 +436,24 @@
         /* ---------- theme ---------- */
         const THEME_NAMES = { '40k': 'WARHAMMER 40,000', eva: 'EVANGELION' };
 
+        function weatherLine(w) {
+            if (!w || w.error === 'no-city') return '';
+            if (w.error === 'unknown-city') return 'Такой город не нашёлся';
+            if (w.error) return 'Погода пока недоступна';
+            return 'Сейчас в ' + w.city + ': ' + Math.round(w.temp) + '°C';
+        }
+
+        $('save-city').addEventListener('click', async () => {
+            try {
+                const r = await post('admin/settings/save', { city: $('city').value });
+                state.settings = r;
+                $('weather-now').textContent = weatherLine(r.weather);
+                toast(r.city ? 'Город сохранён' : 'Погода выключена');
+            } catch (err) { toast(err.message, true); }
+        });
+
         function renderThemes() {
+            $('city').value = state.settings.city || '';
             $('themes').innerHTML = (state.themes || []).map(id =>
                 `<button data-theme="${esc(id)}" class="${state.settings.theme === id ? 'on' : ''}">${esc(THEME_NAMES[id] || id.toUpperCase())}</button>`).join('');
         }

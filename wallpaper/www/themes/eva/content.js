@@ -204,6 +204,15 @@ function eventLines(e) {
         'ELIMINATION FAILED :: ' + alertSubject(e.alert),
         e.alert.note ? 'CAUSE :: ' + e.alert.note : 'SEE THE SENTINEL LOG'
       ] };
+    case 'track':
+      return { cls: 'news', lines: [`AUDIO LOG :: TRACK ${randHex(2)} :: ${e.artist ? upper(e.artist) + ' — ' : ''}${upper(e.title)}`] };
+    case 'disk-low':
+      return { cls: 'alarm', lines: [`STORAGE ${e.letter} CRITICAL :: ${e.freeGb} GB REMAIN`, 'PURGE NON-ESSENTIAL DATA'] };
+    case 'weather':
+      return { cls: e.code >= 95 ? 'alarm' : 'event', lines: [
+        `WEATHER ALERT :: ${weatherWords(e.code)} OVER ${upper(e.city)}`,
+        e.code >= 95 ? 'LIGHTNING :: ALL UNITS TO INTERNAL POWER' : 'UMBRELLA PROTOCOL :: STAND BY'
+      ] };
     case 'spirit-restart':
       return { cls: 'event', lines: ['MAGI REBOOT :: SYSTEM RESTORED', 'ALL THREE UNITS RESPONDING'] };
     case 'new-day':
@@ -219,6 +228,7 @@ function eventSpiritPrompt(e) {
     case 'game-stop': return `Operation "${e.name}" ended after ${e.minutes} minutes. Judge its outcome briefly.`;
     case 'return': return `The pilot came back after ${e.minutes} minutes away. Judge it briefly.`;
     case 'gpu-hot': return 'The unit core is overheating. Vote on what to do, briefly.';
+    case 'track': return `The pilot is listening to "${e.title}"${e.artist ? ' by ' + e.artist : ''}. Judge it in one short line.`;
     case 'heresy': return `An Angel pattern was detected in this machine: "${e.alert.title}". Vote on it, briefly.`;
   }
   return null;

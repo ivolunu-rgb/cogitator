@@ -1,25 +1,36 @@
 # Cogitator wallpaper
 
-Живые обои для Windows на основе [Cogitator](https://github.com/asadovkamran/cogitator): консоль Адептус Механикус прямо на рабочем столе, с настоящими показателями ПК, новостями, каруселью артов и необязательным «стражем», который замечает подозрительную активность.
+Живые обои для Windows на основе [Cogitator](https://github.com/asadovkamran/cogitator): консоль Адептус Механикус или штаба NERV прямо на рабочем столе — с настоящими показателями ПК, музыкой, погодой, новостями и каруселью артов.
 
-*A Windows live-wallpaper build of Cogitator: real PC vitals, CORRUPTION driven by load, news feeds, art carousel, an admin page and an optional security sentinel. Everything outside this folder is the original project by its author.*
+*A Windows live-wallpaper build of Cogitator in two themes (Warhammer 40,000, Evangelion): real PC vitals, load-driven corruption, now playing, network, disks, weather, news feeds, an art carousel and an admin page. Everything outside this folder is the original project by its author.*
 
 [![Обои в работе: консоль, новости, смена артов по клику (нажмите, чтобы открыть видео)](docs/preview.gif)](docs/cogitator-wallpaper.mp4)
 
 *Нажмите на анимацию, чтобы открыть полное видео (22 с).*
 
-| В покое | Под нагрузкой | Тревога стража |
-| --- | --- | --- |
-| ![Спокойный рабочий стол: консоль, новость, панели AUSPEX, PICT-ARCHIVE и CHRONOMETRUM](docs/desktop-calm.png) | ![CORRUPTION 64%: красные строки, молитвы об успокоении духа, рваные полосы](docs/desktop-corruption.png) | ![Тревога стража на месте арта: правка hosts и кнопки OK / NOT OK](docs/desktop-sentinel.png) |
+| В покое | Под нагрузкой |
+| --- | --- |
+| ![Спокойный рабочий стол: консоль, новость, панели показателей, арт и часы](docs/desktop-calm.png) | ![CORRUPTION 64%: красные строки, молитвы об успокоении духа, рваные полосы](docs/desktop-corruption.png) |
 
 ## Две темы
 
 | Тема | Как выглядит |
 | --- | --- |
 | **Warhammer 40,000** (`40k`) | зелёный ЭЛТ-когитатор Адептус Механикус: AUSPEX, CORRUPTION, молитвы машинному духу, имперская дата |
-| **Evangelion** (`eva`) | оранжевый экран штаба NERV: три шестиугольника MAGI (CPU, GPU, RAM), SYNC RATIO и CONTAMINATION, голосование MELCHIOR / BALTHASAR / CASPER, баннер EMERGENCY при перегрузке, ANGEL DETECTED вместо ереси |
+| **Evangelion** (`eva`) | оранжевый экран штаба NERV: три шестиугольника MAGI (CPU, GPU, RAM), SYNC RATIO и CONTAMINATION, голосование MELCHIOR / BALTHASAR / CASPER, баннер EMERGENCY при перегрузке |
 
 Переключается в админке; посмотреть тему, не переключая обои: `http://127.0.0.1:8484/app.html?theme=eva`.
+
+## Что на экране
+
+- **Консоль** печатает логи, молитвы или вердикты MAGI; фразы сочиняет маленькая локальная нейросеть (Ollama, `qwen2.5:0.5b`).
+- **Показатели ПК**: загрузка процессора и видеокарты, температура GPU (NVIDIA), видеопамять и память, сеть (загрузка, отдача, пинг), свободное место на дисках.
+- **Нагрузка = порча.** Чем сильнее работает железо, тем выше CORRUPTION / CONTAMINATION: строки обрываются, текст глитчит, экран дёргается, Евангелион включает EMERGENCY.
+- **Сейчас играет** — трек из Spotify, браузера или любого плеера через медиасессии Windows; смена трека — событие в консоли.
+- **Погода** в вашем городе (Open-Meteo, без ключей; город задаётся в админке); гроза добавляет помех.
+- **События**: запуск и закрытие игр (Steam, Epic, GOG, Xbox), флешки, пропажа интернета, перегрев видеокарты, возвращение к компьютеру, кончающееся место на диске.
+- **Новости** по выбранным темам, на русском и английском.
+- **Карусель артов** справа, смена по клику.
 
 ## Установка
 
@@ -30,8 +41,9 @@
 1. Скачайте **[cogitator-wallpaper.zip](https://github.com/ivolunu-rgb/cogitator/releases/latest/download/cogitator-wallpaper.zip)** и распакуйте куда угодно, например в «Документы».
 2. Дважды щёлкните **`install.cmd`** и выберите тему: `1` — Warhammer 40,000, `2` — Evangelion.
 3. Если Windows спросит про запуск или установку программ — разрешите. Через пару минут обои включатся сами.
+4. Откройте админку **http://127.0.0.1:8484/admin**: впишите свой город для погоды, выберите темы новостей, добавьте картинки.
 
-Удалить — двойной щелчок по **`uninstall.cmd`**.
+Удалить — двойной щелчок по **`uninstall.cmd`** (убирает автозапуск, сервер и обои из Lively; ваши картинки и сами программы — Node.js, Ollama, Lively — остаются).
 
 **Или из PowerShell** (если склонировали репозиторий: `git clone https://github.com/ivolunu-rgb/cogitator.git`), в папке `cogitator\wallpaper`:
 
@@ -40,42 +52,31 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1               # Warhammer
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -Theme eva    # Evangelion
 ```
 
-Установщик сам поставит недостающее (Node.js, Ollama, Lively Wallpaper — их установщики могут спросить разрешение), скачает модель `qwen2.5:0.5b`, добавит сервер обоев в автозагрузку и включит обои. Повторный запуск безопасен: что уже стоит, пропускается.
+Установщик сам поставит недостающее (Node.js, Ollama, Lively Wallpaper — их установщики могут спросить разрешение), скачает модель, добавит сервер обоев в автозагрузку и включит обои. Повторный запуск безопасен: что уже стоит, пропускается.
 
-**Картинки для карусели:** перетащите в админку **http://127.0.0.1:8484/admin** или положите в папку `art`. Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём. Для Евангелиона — свои картинки.
-
-`uninstall.cmd` / `uninstall.ps1` убирает автозапуск, сервер и обои из Lively; ваши картинки и сами программы (Node.js, Ollama, Lively) остаются.
+**Картинки для карусели:** перетащите в админку или положите в папку `art`. Официальные обои Games Workshop есть на [Warhammer Community](https://www.warhammer-community.com/en-gb/articles/omgjr6bi/warhammer-40000-and-warhammer-age-of-sigmar-wallpapers/); они для личного использования, в репозиторий их не кладём. Для Евангелиона — свои картинки.
 
 ## Что внутри
 
 | Путь | Что это |
 | --- | --- |
-| `install.ps1`, `uninstall.ps1` | установка и удаление |
-| `server.js` | локальный сервер на `127.0.0.1:8484`: страница обоев, арты, показатели ПК, события, новости, админка; поднимает Ollama, если она упала |
-| `telemetry.ps1` | фоновый помощник сервера: игры, флешки, простой, интернет |
+| `install.cmd`, `install.ps1` | установка (двойной щелчок / PowerShell) |
+| `uninstall.cmd`, `uninstall.ps1` | удаление |
+| `server.js` | локальный сервер на `127.0.0.1:8484`: страница обоев, арты, показатели ПК, события, новости, погода, пинг, админка; поднимает Ollama, если она упала |
+| `telemetry.ps1` | фоновый помощник сервера: игры, флешки, диски, сеть, простой, интернет, что играет |
 | `start-server.vbs` | запуск сервера без окна (для автозагрузки) |
 | `news.json` | ленты новостей и частота; удобнее править через админку |
 | `www/` | страница обоев (`app.html`), админка (`admin.html`), темы в `www/themes/<тема>/` |
 | `lively/` | то, что кладётся в библиотеку Lively: загрузчик, `LivelyInfo.json`, миниатюра |
 | `art/` | ваши картинки для карусели (в репозитории пусто) |
-| `sentinel/` | страж ORDO SENTINEL: сам скрипт, установщик и удаление |
 
 Своя тема = папка в `www/themes/` с двумя файлами: `theme.js` (цвета, шрифты, подписи) и `content.js` (тексты консоли и событий).
 
-### Страж (по желанию, нужны права администратора)
-
-Из PowerShell в папке `cogitator\wallpaper`:
-
-```powershell
-Start-Process powershell -Verb RunAs -ArgumentList "-NoExit -ExecutionPolicy Bypass -File `"$PWD\sentinel\install-sentinel.ps1`""
-```
-
-Установщик копирует скрипт в `C:\ProgramData\CogitatorSentinel` (писать туда может только администратор), включает журнал отбитых брандмауэром пакетов и аудит неудачных входов и регистрирует задачу от имени SYSTEM. Первые 3 дня страж учится, что для машины нормально. Удаление: `uninstall-sentinel.ps1` в той же папке. Это сигнализация с эвристикой, а не антивирус.
-
-## Безопасность
+## Безопасность и приватность
 
 - Сервер слушает только `127.0.0.1`: из сети он недоступен.
-- Изменения (вердикты стража, загрузка артов, настройки новостей) принимаются только со своих страниц: проверяются заголовки `Host` и `Origin`.
+- Изменения (загрузка артов, настройки, темы новостей) принимаются только со страниц самого сервера: проверяются заголовки `Host` и `Origin`.
 - Страница обоев берётся с `http://127.0.0.1:8484`, поэтому Ollama не нужно разрешать запросы с `Origin: null`.
+- В интернет ходят только: ленты новостей, Open-Meteo (город — только если вы его указали), пинг до `1.1.1.1` и шрифты Google Fonts. Нейросеть работает локально.
 
 Warhammer 40,000 — торговая марка Games Workshop; Neon Genesis Evangelion — khara, Inc. Любительский проект для личного использования.
